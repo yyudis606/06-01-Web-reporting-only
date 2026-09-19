@@ -1,0 +1,122 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 5vw, 32px) 16px;
+  color: #e5eefc;
+}
+
+.auth-card {
+  width: min(100%, 460px);
+  padding: 30px;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(124, 58, 237, 0.1)),
+    rgba(15, 23, 42, 0.88);
+  box-shadow: 0 30px 60px rgba(2, 8, 23, 0.34);
+
+  h1 {
+    margin: 8px 0 10px;
+    font-size: clamp(1.8rem, 5vw, 2.4rem);
+  }
+
+  p {
+    color: #a9b6d1;
+    line-height: 1.6;
+  }
+}
+
+.auth-brand {
+  display: inline-grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.auth-brand__logo {
+  width: min(180px, 58vw);
+  height: auto;
+  object-fit: contain;
+}
+
+.auth-eyebrow {
+  margin: 0;
+  color: #8ea2d6;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.auth-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+
+  label {
+    display: grid;
+    gap: 8px;
+    color: #cbd5e1;
+    font-weight: 700;
+  }
+
+  input {
+    width: 100%;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 14px;
+    background: rgba(2, 8, 23, 0.52);
+    color: #e5eefc;
+    padding: 13px 14px;
+    font: inherit;
+  }
+
+  button {
+    border: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    color: white;
+    cursor: pointer;
+    font-weight: 800;
+    padding: 14px 18px;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+.auth-message {
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fecaca;
+  padding: 12px;
+}
+
+.auth-switch {
+  width: 100%;
+  margin-top: 16px;
+  border: 0;
+  background: transparent;
+  color: #93c5fd;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.auth-note {
+  margin-bottom: 0;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+
+  .auth-form input,
+  .auth-form button {
+    min-height: 48px;
+  }
+}

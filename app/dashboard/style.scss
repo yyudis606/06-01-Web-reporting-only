@@ -1,7 +1,7 @@
 .dashboard-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 24px 64px;
+  padding: clamp(24px, 4vw, 40px) clamp(16px, 3vw, 24px) 64px;
   color: #e5eefc;
 }
 
@@ -28,7 +28,17 @@
   color: #8ea2d6;
 }
 
+.dashboard-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
 .dashboard-header__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 12px;
   background: linear-gradient(135deg, #8b5cf6, #3b82f6);
@@ -37,6 +47,13 @@
   padding: 12px 18px;
   cursor: pointer;
   box-shadow: 0 10px 18px rgba(104, 91, 240, 0.35);
+  text-decoration: none;
+}
+
+.dashboard-header__button--ghost {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: none;
 }
 
 .summary-grid {
@@ -145,6 +162,15 @@
 }
 
 @media (max-width: 900px) {
+  .dashboard-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-header__actions {
+    justify-content: flex-start;
+  }
+
   .update-notice {
     grid-template-columns: 1fr;
   }
@@ -162,11 +188,81 @@
   }
 }
 
+@media (max-width: 600px) {
+  .dashboard-page {
+    padding: 22px 14px 48px;
+  }
+
+  .dashboard-header {
+    margin-bottom: 22px;
+
+    h1 {
+      font-size: clamp(1.75rem, 9vw, 2.35rem);
+      line-height: 1.05;
+    }
+  }
+
+  .dashboard-header__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .dashboard-header__button {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .summary-grid {
+    gap: 14px;
+  }
+
+  .update-notice,
+  .panel {
+    border-radius: 18px;
+    padding: 18px;
+  }
+
+  .update-notice__times {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .update-time {
+    min-width: 0;
+    padding: 10px 8px;
+  }
+
+  .panel__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .update-notice__times {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dashboard-footer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
   margin-top: 32px;
   padding-top: 20px;
   border-top: 1px solid rgba(148, 163, 184, 0.2);
   color: #8ea2d6;
   font-size: 0.88rem;
   text-align: center;
+}
+
+.dashboard-footer__logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }

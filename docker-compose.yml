@@ -1,0 +1,33 @@
+services:
+  supertokens-db:
+    image: postgres:16-alpine
+    container_name: web-reporting-supertokens-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: supertokens
+      POSTGRES_USER: supertokens_user
+      POSTGRES_PASSWORD: supertokens_password
+    volumes:
+      - supertokens-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supertokens_user -d supertokens"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  supertokens:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql:12.0.7
+    container_name: web-reporting-supertokens-core
+    restart: unless-stopped
+    depends_on:
+      supertokens-db:
+        condition: service_healthy
+    env_file:
+      - .env.local
+    environment:
+      POSTGRESQL_CONNECTION_URI: postgresql://supertokens_user:supertokens_password@supertokens-db:5432/supertokens
+    ports:
+      - "127.0.0.1:3567:3567"
+
+volumes:
+  supertokens-db-data:
