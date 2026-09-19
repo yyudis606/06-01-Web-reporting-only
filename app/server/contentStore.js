@@ -7,6 +7,31 @@ const CONTENT_KEY = 'dashboard';
 
 let pool;
 
+function hydrateContent(content = {}) {
+  return {
+    ...defaultDashboardContent,
+    ...content,
+    text: {
+      ...defaultDashboardContent.text,
+      ...(content.text || {}),
+    },
+    project: {
+      ...defaultDashboardContent.project,
+      ...(content.project || {}),
+    },
+    updateSchedules: Array.isArray(content.updateSchedules)
+      ? content.updateSchedules
+      : defaultDashboardContent.updateSchedules,
+    teams: Array.isArray(content.teams) ? content.teams : defaultDashboardContent.teams,
+    dailyWorkInput: Array.isArray(content.dailyWorkInput)
+      ? content.dailyWorkInput
+      : defaultDashboardContent.dailyWorkInput,
+    siteStatuses: Array.isArray(content.siteStatuses)
+      ? content.siteStatuses
+      : defaultDashboardContent.siteStatuses,
+  };
+}
+
 function getPool() {
   if (!process.env.DATABASE_URL) {
     return undefined;
@@ -38,7 +63,7 @@ export async function getDashboardContent() {
   const db = getPool();
 
   if (!db) {
-    return defaultDashboardContent;
+    return hydrateContent();
   }
 
   const client = await db.connect();
@@ -54,13 +79,13 @@ export async function getDashboardContent() {
         [CONTENT_KEY, JSON.stringify(defaultDashboardContent)],
       );
 
-      return defaultDashboardContent;
+      return hydrateContent();
     }
 
-    return result.rows[0].data;
+    return hydrateContent(result.rows[0].data);
   } catch (error) {
     console.error('Failed to read dashboard content:', error);
-    return defaultDashboardContent;
+    return hydrateContent();
   } finally {
     client.release();
   }
@@ -82,13 +107,13 @@ export async function saveDashboardContent(content) {
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (key)
        DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      [CONTENT_KEY, JSON.stringify(content)],
+      [CONTENT_KEY, JSON.stringify(hydrateContent(content))],
     );
   } finally {
     client.release();
   }
 
-  return content;
+  return hydrateContent(content);
 }
 
 export async function getDerivedDashboardData() {

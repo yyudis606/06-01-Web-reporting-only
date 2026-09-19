@@ -14,6 +14,7 @@ import {
   divisionChartData,
   divisionResults,
   progressTrend,
+  siteStatuses,
   summaryCards,
   updateSchedules,
   weeklyResults,
@@ -22,12 +23,15 @@ import './style.scss';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [exportError, setExportError] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     dashboardText,
     divisionChartData,
     divisionResults,
     progressTrend,
+    siteStatuses,
     summaryCards,
     updateSchedules,
     weeklyResults,
@@ -44,6 +48,7 @@ export default function DashboardPage() {
           divisionChartData: data.divisionChartData,
           divisionResults: data.divisionResults,
           progressTrend: data.progressTrend,
+          siteStatuses: Array.isArray(data.siteStatuses) ? data.siteStatuses : siteStatuses,
           summaryCards: data.summaryCards,
           updateSchedules: data.updateSchedules,
           weeklyResults: data.weeklyResults,
@@ -60,6 +65,37 @@ export default function DashboardPage() {
     router.push('/auth');
   };
 
+  const handleExport = async () => {
+    setExportError('');
+    setIsExporting(true);
+
+    try {
+      const response = await fetch('/api/export');
+
+      if (!response.ok) {
+        throw new Error(`Export gagal dengan status ${response.status}`);
+      }
+
+      const file = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || 'progress-pekerjaan.xlsx';
+      const url = URL.createObjectURL(file);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export progress report:', error);
+      setExportError('File Excel gagal dibuat. Silakan coba kembali.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <main className="dashboard-page">
       <header className="dashboard-header">
@@ -68,8 +104,13 @@ export default function DashboardPage() {
           <h1>{dashboardData.dashboardText.title}</h1>
         </div>
         <div className="dashboard-header__actions">
-          <button type="button" className="dashboard-header__button">
-            {dashboardData.dashboardText.exportButton}
+          <button
+            type="button"
+            className="dashboard-header__button"
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? 'Membuat Excel...' : dashboardData.dashboardText.exportButton}
           </button>
           {isLoggedIn ? (
             <>
@@ -91,6 +132,7 @@ export default function DashboardPage() {
           )}
         </div>
       </header>
+      {exportError ? <p className="dashboard-export-error" role="alert">{exportError}</p> : null}
 
       <section className="summary-grid">
         {dashboardData.summaryCards.map((card) => (
@@ -173,6 +215,32 @@ export default function DashboardPage() {
                   </small>
                 </div>
                 <span className="work-result__status">{item.status}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel site-status">
+          <div className="site-status__header">
+            <div>
+              <p className="eyebrow">Detail Site</p>
+              <h2>Status Site &amp; Team Lokasi</h2>
+            </div>
+            <span>{dashboardData.siteStatuses.length} site</span>
+          </div>
+
+          <div className="site-status__list">
+            {dashboardData.siteStatuses.map((site, index) => (
+              <div key={`${site.name}-${index}`} className="site-status__item">
+                <span className="site-status__number">{index + 1}</span>
+                <div className="site-status__content">
+                  <strong>{site.name}</strong>
+                  <span>{site.team}</span>
+                  {site.note ? <small>Note: {site.note}</small> : null}
+                </div>
+                <span className={`site-status__badge site-status__badge--${site.status.toLowerCase()}`}>
+                  {site.status}
+                </span>
               </div>
             ))}
           </div>

@@ -11,6 +11,7 @@ export const ADMIN_ROLES = {
       'content:schedules',
       'content:teams',
       'content:daily-work',
+      'content:sites',
       'users:manage',
     ],
   },
@@ -38,6 +39,11 @@ export const ADMIN_ROLES = {
     label: 'Input Hasil Harian',
     description: 'Bisa input install, hold, dan cancel harian tiap team.',
     permissions: ['content:daily-work'],
+  },
+  siteEditor: {
+    label: 'Edit Data Site',
+    description: 'Bisa mengatur nama site, status, team lokasi, dan catatan site.',
+    permissions: ['content:sites'],
   },
   userManager: {
     label: 'Pengelola User',

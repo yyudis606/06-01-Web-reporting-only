@@ -27,4 +27,11 @@ export const defaultDashboardContent = {
   ],
   teams,
   dailyWorkInput,
+  siteStatuses: [
+    { name: 'Site A', status: 'Done', team: 'Team A', note: '' },
+    { name: 'Site B', status: 'Open', team: 'Team B', note: '' },
+    { name: 'Site C', status: 'Hold', team: 'Team A', note: '' },
+    { name: 'Site D', status: 'Cancel', team: 'Team B', note: 'Not space' },
+    { name: 'Site E', status: 'Cancel', team: 'Team A', note: 'Beda system 24VDC' },
+  ],
 };

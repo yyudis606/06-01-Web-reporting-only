@@ -39,6 +39,7 @@ const normalizeContent = (content) => ({
   updateSchedules: Array.isArray(content.updateSchedules) ? content.updateSchedules : [],
   teams: Array.isArray(content.teams) ? content.teams : [],
   dailyWorkInput: Array.isArray(content.dailyWorkInput) ? content.dailyWorkInput : [],
+  siteStatuses: Array.isArray(content.siteStatuses) ? content.siteStatuses : [],
 });
 
 export function deriveDashboardData(rawContent) {
@@ -211,6 +212,12 @@ export function deriveDashboardData(rawContent) {
     content,
     dashboardText,
     updateSchedules: content.updateSchedules,
+    siteStatuses: content.siteStatuses.map((site) => ({
+      name: site.name || 'Site tanpa nama',
+      status: ['Open', 'Done', 'Hold', 'Cancel'].includes(site.status) ? site.status : 'Open',
+      team: site.team || 'Belum ditentukan',
+      note: site.note || '',
+    })),
     summaryCards,
     progressTrend,
     weeklyResults,
@@ -231,6 +238,7 @@ export function deriveDashboardData(rawContent) {
       dailyWorkSummary,
       divisionResults,
       updateSchedules: content.updateSchedules,
+      siteStatuses: content.siteStatuses,
     },
   };
 }

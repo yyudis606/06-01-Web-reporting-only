@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { doesSessionExist, SessionAuth, signOut } from 'supertokens-auth-react/recipe/session';
 import { ADMIN_ROLES } from '../config/admin';
@@ -34,10 +34,28 @@ function AdminContent() {
   const [activeEditor, setActiveEditor] = useState('dailyWorkInput');
   const [message, setMessage] = useState('Memuat data admin...');
   const [passwordInputs, setPasswordInputs] = useState({});
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
   const roleEntries = useMemo(() => Object.entries(ADMIN_ROLES), []);
+
+  function showToast(type, title, detail, duration = 3500) {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+
+    setToast({ type, title, detail });
+
+    if (duration > 0) {
+      toastTimerRef.current = setTimeout(() => {
+        setToast(null);
+        toastTimerRef.current = null;
+      }, duration);
+    }
+  }
 
   async function redirectToLogin(messageText = 'Session login sudah kedaluwarsa. Silakan login ulang.') {
     setMessage(messageText);
+    showToast('error', 'Session Berakhir', messageText);
     await signOut();
     router.push('/auth');
   }
@@ -75,7 +93,7 @@ function AdminContent() {
     }
 
     if (!meResponse.ok) {
-      setMessage(meData.error || 'Gagal membaca session admin.');
+      setMessage(meData.message || meData.error || 'Gagal membaca session admin.');
       return;
     }
 
@@ -98,7 +116,7 @@ function AdminContent() {
       }
 
       if (!contentResponse.ok) {
-        setMessage(contentData.error || 'Gagal memuat editor website.');
+        setMessage(contentData.message || contentData.error || 'Gagal memuat editor website.');
         return;
       }
 
@@ -118,7 +136,7 @@ function AdminContent() {
       }
 
       if (!usersResponse.ok) {
-        setMessage(usersData.error || 'Gagal memuat user.');
+        setMessage(usersData.message || usersData.error || 'Gagal memuat user.');
         return;
       }
 
@@ -133,6 +151,12 @@ function AdminContent() {
       console.error('Failed to load admin page:', error);
       setMessage('Terjadi error saat memuat halaman admin.');
     });
+
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -145,6 +169,8 @@ function AdminContent() {
       ? [...new Set([...user.roles, role])]
       : user.roles.filter((item) => item !== role);
 
+    showToast('loading', 'Memperbarui Hak Akses', `Memproses role ${user.username}...`, 0);
+
     const { response, data, sessionExpired } = await fetchAdminJson(`/api/admin/users/${user.id}/roles`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -156,7 +182,9 @@ function AdminContent() {
     }
 
     if (!response.ok) {
-      setMessage(data.error || 'Gagal mengubah role user.');
+      const errorMessage = data.message || data.error || 'Gagal mengubah role user.';
+      setMessage(errorMessage);
+      showToast('error', 'Hak Akses Gagal Diperbarui', errorMessage);
       if (data.user) {
         setUsers((currentUsers) =>
           currentUsers.map((item) => (item.id === data.user.id ? data.user : item))
@@ -166,6 +194,7 @@ function AdminContent() {
     }
 
     setMessage('Role user berhasil diperbarui.');
+    showToast('success', 'Hak Akses Tersimpan', `Role ${user.username} berhasil diperbarui.`);
     setUsers((currentUsers) =>
       currentUsers.map((item) => (item.id === data.user.id ? data.user : item))
     );
@@ -176,8 +205,11 @@ function AdminContent() {
 
     if (newPassword.length < 8) {
       setMessage('Password baru minimal 8 karakter.');
+      showToast('error', 'Password Belum Direset', 'Password baru minimal 8 karakter.');
       return;
     }
+
+    showToast('loading', 'Mereset Password', `Memproses password ${user.username}...`, 0);
 
     const { response, data, sessionExpired } = await fetchAdminJson(`/api/admin/users/${user.id}/password`, {
       method: 'PATCH',
@@ -190,12 +222,15 @@ function AdminContent() {
     }
 
     if (!response.ok) {
-      setMessage(data.error || 'Gagal reset password.');
+      const errorMessage = data.message || data.error || 'Gagal reset password.';
+      setMessage(errorMessage);
+      showToast('error', 'Reset Password Gagal', errorMessage);
       return;
     }
 
     setPasswordInputs((current) => ({ ...current, [user.id]: '' }));
     setMessage(`Password ${user.username} berhasil di-reset.`);
+    showToast('success', 'Password Reset', `Password ${user.username} berhasil di-reset.`);
   };
 
   const updateContent = (section, value) => {
@@ -206,6 +241,8 @@ function AdminContent() {
   };
 
   const saveSection = async (section, nextValue = content[section]) => {
+    showToast('loading', 'Menyimpan Perubahan', 'Mohon tunggu, data sedang disimpan...', 0);
+
     const { response, data, sessionExpired } = await fetchAdminJson('/api/admin/content', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -217,16 +254,45 @@ function AdminContent() {
     }
 
     if (!response.ok) {
-      setMessage(data.error || 'Gagal menyimpan perubahan.');
+      const errorMessage = data.message || data.error || 'Gagal menyimpan perubahan.';
+      setMessage(errorMessage);
+      showToast('error', 'Perubahan Gagal Disimpan', errorMessage);
       return;
     }
 
     setContent(data.content);
     setMessage('Perubahan berhasil disimpan. Dashboard publik otomatis memakai data terbaru.');
+    showToast('success', 'Perubahan Tersimpan', 'Dashboard publik sudah memakai data terbaru.');
   };
 
   return (
     <main className="admin-page">
+      {toast ? (
+        <div
+          className={`admin-toast admin-toast--${toast.type}`}
+          role={toast.type === 'error' ? 'alert' : 'status'}
+          aria-live="polite"
+        >
+          <span className="admin-toast__icon" aria-hidden="true">
+            {toast.type === 'loading' ? '' : toast.type === 'success' ? '✓' : '!'}
+          </span>
+          <div>
+            <strong>{toast.title}</strong>
+            <p>{toast.detail}</p>
+          </div>
+          {toast.type !== 'loading' ? (
+            <button
+              type="button"
+              className="admin-toast__close"
+              onClick={() => setToast(null)}
+              aria-label="Tutup notifikasi"
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       <header className="admin-header">
         <div>
           <p className="admin-eyebrow">Admin Area</p>
@@ -338,8 +404,9 @@ function WebsiteEditor({
     { id: 'dailyWorkInput', label: 'Input Harian', description: 'Isi install, hold, dan cancel tiap team.', step: '1' },
     { id: 'project', label: 'Target Project', description: 'Ubah total site dan target harian.', step: '2' },
     { id: 'teams', label: 'Team', description: 'Ubah nama dan warna team.', step: '3' },
-    { id: 'updateSchedules', label: 'Jadwal Update', description: 'Atur jam reminder update data.', step: '4' },
-    { id: 'text', label: 'Teks Halaman', description: 'Ubah judul dan keterangan dashboard.', step: '5' },
+    { id: 'siteStatuses', label: 'Data Site', description: 'Atur nama, status, team lokasi, dan catatan site.', step: '4' },
+    { id: 'updateSchedules', label: 'Jadwal Update', description: 'Atur jam reminder update data.', step: '5' },
+    { id: 'text', label: 'Teks Halaman', description: 'Ubah judul dan keterangan dashboard.', step: '6' },
   ].filter((section) => editableSections[section.id]);
 
   if (sections.length === 0) {
@@ -419,6 +486,15 @@ function WebsiteEditor({
               teams={content.teams}
               onChange={(teams) => onChange('teams', teams)}
               onSave={() => onSave('teams')}
+            />
+          ) : null}
+
+          {selectedSection === 'siteStatuses' ? (
+            <SiteEditor
+              sites={content.siteStatuses}
+              teams={content.teams}
+              onChange={(sites) => onChange('siteStatuses', sites)}
+              onSave={() => onSave('siteStatuses')}
             />
           ) : null}
 
@@ -572,6 +648,95 @@ function TeamEditor({ teams, onChange, onSave }) {
       ))}
       <button type="button" className="editor-secondary" onClick={() => onChange([...teams, { name: `Team ${teams.length + 1}`, color: '#3b82f6' }])}>
         + Tambah Team
+      </button>
+      <EditorActions onSave={onSave} />
+    </div>
+  );
+}
+
+function SiteEditor({ sites, teams, onChange, onSave }) {
+  const updateRow = (index, nextRow) => {
+    onChange(sites.map((site, siteIndex) => (siteIndex === index ? nextRow : site)));
+  };
+
+  return (
+    <div className="editor-form">
+      <p className="editor-help">
+        Status Done untuk site selesai, Open untuk belum dikerjakan, Hold untuk tertunda,
+        dan Cancel untuk dibatalkan. Isi note jika ada alasan khusus.
+      </p>
+
+      {sites.map((site, index) => {
+        const currentTeam = site.team || teams[0]?.name || 'Belum ditentukan';
+        const availableTeams = teams.some((team) => team.name === currentTeam)
+          ? teams
+          : [{ name: currentTeam }, ...teams];
+
+        return (
+          <div key={`${site.name}-${index}`} className="editor-row editor-row--site">
+            <label>
+              Nama Site
+              <input
+                value={site.name || ''}
+                placeholder="Contoh: Site A"
+                onChange={(event) => updateRow(index, { ...site, name: event.target.value })}
+              />
+            </label>
+            <label>
+              Status
+              <select
+                value={site.status || 'Open'}
+                onChange={(event) => updateRow(index, { ...site, status: event.target.value })}
+              >
+                <option value="Open">Open</option>
+                <option value="Done">Done</option>
+                <option value="Hold">Hold</option>
+                <option value="Cancel">Cancel</option>
+              </select>
+            </label>
+            <label>
+              Team ke Lokasi
+              <select
+                value={currentTeam}
+                onChange={(event) => updateRow(index, { ...site, team: event.target.value })}
+              >
+                {availableTeams.map((team) => (
+                  <option key={team.name} value={team.name}>{team.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Note
+              <input
+                value={site.note || ''}
+                placeholder="Kosongkan jika tidak ada catatan"
+                onChange={(event) => updateRow(index, { ...site, note: event.target.value })}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => onChange(sites.filter((_, siteIndex) => siteIndex !== index))}
+            >
+              Hapus
+            </button>
+          </div>
+        );
+      })}
+
+      <button
+        type="button"
+        className="editor-secondary"
+        onClick={() => onChange([
+          ...sites,
+          {
+            name: `Site ${sites.length + 1}`,
+            status: 'Open',
+            team: teams[0]?.name || 'Belum ditentukan',
+            note: '',
+          },
+        ])}
+      >
+        + Tambah Site
       </button>
       <EditorActions onSave={onSave} />
     </div>

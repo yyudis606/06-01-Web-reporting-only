@@ -1,5 +1,6 @@
 import SuperTokens from 'supertokens-node';
 import EmailPasswordNode from 'supertokens-node/recipe/emailpassword';
+import SessionNode from 'supertokens-node/recipe/session';
 import UserRolesNode from 'supertokens-node/recipe/userroles';
 import { withSession } from 'supertokens-node/nextjs';
 import { ensureSuperTokensInit } from '../config/backend';
@@ -34,8 +35,21 @@ export function withRequiredSession(request, handler) {
     request,
     async (error, session) => {
       if (error) {
-        console.error('Session verification failed:', error);
-        return jsonResponse({ error: 'SESSION_INVALID' }, 440);
+        if (error instanceof SessionNode.Error) {
+          console.error('Session verification failed:', error);
+          return jsonResponse({ error: 'SESSION_INVALID' }, 440);
+        }
+
+        console.error('Admin request failed:', error);
+        return jsonResponse(
+          {
+            error: 'SERVER_ERROR',
+            message: error.message === 'DATABASE_URL is not configured.'
+              ? 'Database belum dikonfigurasi untuk environment ini.'
+              : 'Terjadi error saat memproses permintaan admin.',
+          },
+          500
+        );
       }
 
       if (!session) {

@@ -7,6 +7,7 @@ const SECTION_PERMISSIONS = {
   updateSchedules: 'content:schedules',
   teams: 'content:teams',
   dailyWorkInput: 'content:daily-work',
+  siteStatuses: 'content:sites',
 };
 
 function canEditSection(admin, section) {
@@ -63,8 +64,8 @@ export async function PATCH(request) {
       nextContent[section] = value;
     }
 
-    await saveDashboardContent(nextContent);
+    const savedContent = await saveDashboardContent(nextContent);
 
-    return jsonResponse({ content: nextContent });
+    return jsonResponse({ content: savedContent });
   });
 }

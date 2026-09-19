@@ -9,6 +9,7 @@ export async function GET() {
     summaryCards: data.summaryCards,
     progressTrend: data.progressTrend,
     weeklyResults: data.weeklyResults,
+    siteStatuses: data.siteStatuses,
     divisionResults: data.divisionResults,
     divisionChartData: data.divisionChartData,
     progressApiData: data.progressApiData,
