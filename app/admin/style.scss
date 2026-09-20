@@ -125,6 +125,12 @@
   }
 }
 
+.admin-owner-name {
+  margin: 0 0 8px;
+  color: #bfdbfe;
+  font-weight: 800;
+}
+
 .admin-eyebrow {
   margin: 0;
   color: #8ea2d6;
@@ -189,6 +195,256 @@
 
   h2 {
     margin: 6px 0 0;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: #a9b6d1;
+  }
+}
+
+.admin-panel__header--split {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-secondary-button {
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 12px;
+  background: rgba(2, 8, 23, 0.45);
+  color: #e5eefc;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 11px 14px;
+}
+
+.admin-danger-button {
+  border: 1px solid rgba(248, 113, 113, 0.42);
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 11px 14px;
+}
+
+.admin-activity__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.admin-empty-state {
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(2, 8, 23, 0.34);
+  color: #a9b6d1;
+}
+
+.admin-storage__badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.admin-storage__meter {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(2, 8, 23, 0.55);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(135deg, #22c55e, #38bdf8);
+  }
+}
+
+.admin-storage__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+
+  div {
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(2, 8, 23, 0.35);
+  }
+
+  small,
+  strong {
+    display: block;
+  }
+
+  small {
+    color: #8ea2d6;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    margin-top: 6px;
+    font-size: 1.35rem;
+  }
+}
+
+.admin-storage__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+
+  span {
+    padding: 7px 10px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 999px;
+    color: #a9b6d1;
+    font-size: 0.78rem;
+  }
+}
+
+.admin-activity__list {
+  display: grid;
+  gap: 12px;
+  max-height: 460px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.admin-activity__item {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) 1fr;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  background: rgba(2, 8, 23, 0.34);
+}
+
+.admin-activity__time,
+.admin-activity__content {
+  display: grid;
+  gap: 5px;
+
+  span,
+  small {
+    color: #8ea2d6;
+    line-height: 1.45;
+  }
+
+  small {
+    font-size: 0.78rem;
+  }
+}
+
+.admin-activity__details {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.admin-activity__text-detail {
+  display: block;
+  min-height: 23px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.52);
+  line-height: 19px;
+}
+
+.admin-activity-change {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.48);
+  overflow: hidden;
+}
+
+.admin-activity-change--add {
+  border-color: rgba(74, 222, 128, 0.26);
+}
+
+.admin-activity-change--delete {
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
+.admin-activity-change--edit {
+  border-color: rgba(96, 165, 250, 0.28);
+}
+
+.admin-activity-change__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(2, 8, 23, 0.28);
+
+  strong {
+    color: #e5eefc;
+  }
+
+  span {
+    color: #93c5fd;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-align: right;
+  }
+}
+
+.admin-activity-change__compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  padding: 12px;
+
+  > span {
+    display: grid;
+    place-items: center;
+    color: #60a5fa;
+    font-weight: 900;
+  }
+
+  > div {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(2, 8, 23, 0.34);
+  }
+
+  small,
+  p {
+    display: block;
+    margin: 0;
+  }
+
+  small {
+    color: #8ea2d6;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  p {
+    margin-top: 6px;
+    color: #e5eefc;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -267,6 +523,30 @@
     cursor: pointer;
     font-weight: 800;
     padding: 12px 14px;
+  }
+}
+
+.admin-user-danger-zone {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 14px;
+  background: rgba(127, 29, 29, 0.12);
+
+  strong,
+  span {
+    display: block;
+  }
+
+  span {
+    margin-top: 4px;
+    color: #fca5a5;
+    font-size: 0.82rem;
+    line-height: 1.4;
   }
 }
 
@@ -628,6 +908,7 @@
   .admin-current-user,
   .admin-user-card__title,
   .admin-password-reset,
+  .admin-user-danger-zone,
   .editor-row,
   .editor-row--daily,
   .editor-quick-add,
@@ -678,6 +959,47 @@
 
   .admin-role-list {
     grid-template-columns: 1fr;
+  }
+
+  .admin-storage__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-panel__header--split,
+  .admin-activity__item {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-panel__header--split {
+    display: grid;
+  }
+
+  .admin-secondary-button,
+  .admin-danger-button {
+    width: 100%;
+  }
+
+  .admin-activity__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .admin-activity-change__title {
+    display: grid;
+    gap: 6px;
+
+    span {
+      text-align: left;
+    }
+  }
+
+  .admin-activity-change__compare {
+    grid-template-columns: 1fr;
+
+    > span {
+      transform: rotate(90deg);
+    }
   }
 
   .editor-daily-header {

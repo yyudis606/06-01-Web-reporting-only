@@ -9,10 +9,14 @@ export async function GET(request) {
     }
 
     if (!admin.canManageUsers) {
-      return jsonResponse({ error: 'Akun ini tidak punya izin mengelola user.' }, 403);
+      return jsonResponse({ error: 'Akun ini tidak punya izin Pengelola User.' }, 403);
     }
 
     const users = await listAllUsers();
-    return jsonResponse({ users });
+    const visibleUsers = admin.isAdministrator
+      ? users
+      : users.filter((user) => !user.roles.includes('administrator'));
+
+    return jsonResponse({ users: visibleUsers });
   });
 }

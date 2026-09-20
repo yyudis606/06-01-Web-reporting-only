@@ -1,12 +1,8 @@
-import pg from 'pg';
 import { defaultDashboardContent } from '../../data/defaultDashboardContent';
 import { deriveDashboardData } from '../../data/dashboardModel';
+import { getDatabasePool } from './database';
 
-const { Pool } = pg;
 const CONTENT_KEY = 'dashboard';
-
-let pool;
-
 function hydrateContent(content = {}) {
   return {
     ...defaultDashboardContent,
@@ -32,23 +28,6 @@ function hydrateContent(content = {}) {
   };
 }
 
-function getPool() {
-  if (!process.env.DATABASE_URL) {
-    return undefined;
-  }
-
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    });
-  }
-
-  return pool;
-}
-
 async function ensureContentTable(client) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS app_content (
@@ -60,15 +39,16 @@ async function ensureContentTable(client) {
 }
 
 export async function getDashboardContent() {
-  const db = getPool();
+  const db = getDatabasePool();
 
   if (!db) {
     return hydrateContent();
   }
 
-  const client = await db.connect();
+  let client;
 
   try {
+    client = await db.connect();
     await ensureContentTable(client);
     const result = await client.query('SELECT data FROM app_content WHERE key = $1', [CONTENT_KEY]);
 
@@ -87,12 +67,12 @@ export async function getDashboardContent() {
     console.error('Failed to read dashboard content:', error);
     return hydrateContent();
   } finally {
-    client.release();
+    client?.release();
   }
 }
 
 export async function saveDashboardContent(content) {
-  const db = getPool();
+  const db = getDatabasePool();
 
   if (!db) {
     throw new Error('DATABASE_URL is not configured.');

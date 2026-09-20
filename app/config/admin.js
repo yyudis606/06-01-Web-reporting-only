@@ -47,7 +47,7 @@ export const ADMIN_ROLES = {
   },
   userManager: {
     label: 'Pengelola User',
-    description: 'Bisa mengangkat admin dan reset password user.',
+    description: 'Bisa mengatur admin, reset password, dan hapus akun user.',
     permissions: ['users:manage'],
   },
 };
@@ -66,6 +66,16 @@ export function emailToUsername(email = '') {
   return email.endsWith(`@${AUTH_EMAIL_DOMAIN}`)
     ? email.slice(0, -(`@${AUTH_EMAIL_DOMAIN}`.length))
     : email;
+}
+
+export function formatUsernameForDisplay(username = '') {
+  const trimmedUsername = username.trim();
+
+  if (/^[a-z]+$/.test(trimmedUsername)) {
+    return `${trimmedUsername[0].toUpperCase()}${trimmedUsername.slice(1)}`;
+  }
+
+  return trimmedUsername;
 }
 
 export function isSuperAdminUsername(username) {

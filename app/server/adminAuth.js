@@ -1,6 +1,7 @@
 import SuperTokens from 'supertokens-node';
 import EmailPasswordNode from 'supertokens-node/recipe/emailpassword';
 import SessionNode from 'supertokens-node/recipe/session';
+import UserMetadataNode from 'supertokens-node/recipe/usermetadata';
 import UserRolesNode from 'supertokens-node/recipe/userroles';
 import { withSession } from 'supertokens-node/nextjs';
 import { ensureSuperTokensInit } from '../config/backend';
@@ -8,6 +9,7 @@ import {
   ADMIN_ROLE_IDS,
   ADMIN_ROLES,
   emailToUsername,
+  formatUsernameForDisplay,
   getPermissionsFromRoles,
   isSuperAdminUsername,
 } from '../config/admin';
@@ -64,17 +66,36 @@ export function withRequiredSession(request, handler) {
 
 export async function getUserSummary(user) {
   const email = user.emails[0] || '';
+  const username = emailToUsername(email);
+  const metadataResponse = await UserMetadataNode.getUserMetadata(user.id);
+  const displayName = String(metadataResponse.metadata.displayName || '').trim()
+    || formatUsernameForDisplay(username);
   const rolesResponse = await UserRolesNode.getRolesForUser(TENANT_ID, user.id);
   const roles = rolesResponse.status === 'OK' ? rolesResponse.roles : [];
 
   return {
     id: user.id,
-    username: emailToUsername(email),
+    username,
+    displayName,
     email,
     roles,
     permissions: getPermissionsFromRoles(roles),
     timeJoined: user.timeJoined,
   };
+}
+
+export async function updateCurrentUserDisplayName(session, displayName) {
+  const safeDisplayName = String(displayName || '').trim().slice(0, 80);
+
+  if (!safeDisplayName) {
+    return { status: 'EMPTY_DISPLAY_NAME' };
+  }
+
+  await UserMetadataNode.updateUserMetadata(session.getUserId(), {
+    displayName: safeDisplayName,
+  });
+
+  return { status: 'OK' };
 }
 
 export async function getSessionUser(session) {
@@ -114,6 +135,15 @@ export async function getCurrentAdmin(session) {
 
 export async function bootstrapSuperAdminIfNeeded(session) {
   await ensureAdminRoles();
+
+  const existingAdministrators = await UserRolesNode.getUsersThatHaveRole(TENANT_ID, 'administrator');
+  if (existingAdministrators.status !== 'OK') {
+    return { status: existingAdministrators.status };
+  }
+
+  if (existingAdministrators.users.length > 0) {
+    return { status: 'ADMINISTRATOR_ALREADY_EXISTS' };
+  }
 
   const user = await getSessionUser(session);
   if (!user) {
@@ -164,6 +194,18 @@ export async function setUserRoles(targetUserId, roles) {
 
   const user = await SuperTokens.getUser(targetUserId);
   return user ? getUserSummary(user) : undefined;
+}
+
+export async function deleteUserAccount(targetUserId) {
+  const user = await SuperTokens.getUser(targetUserId);
+  if (!user) {
+    return { status: 'UNKNOWN_USER_ID_ERROR' };
+  }
+
+  const summary = await getUserSummary(user);
+  await SuperTokens.deleteUser(targetUserId, true);
+
+  return { status: 'OK', user: summary };
 }
 
 export async function updateUserPassword(targetUserId, newPassword) {

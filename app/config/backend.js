@@ -10,6 +10,7 @@
 import SuperTokens from 'supertokens-node';
 import EmailPasswordNode from 'supertokens-node/recipe/emailpassword';
 import SessionNode from 'supertokens-node/recipe/session';
+import UserMetadataNode from 'supertokens-node/recipe/usermetadata';
 import UserRolesNode from 'supertokens-node/recipe/userroles';
 import { appInfo } from './appInfo';
 
@@ -31,6 +32,7 @@ export const backendConfig = () => ({
       },
     }),
     SessionNode.init(),
+    UserMetadataNode.init(),
     UserRolesNode.init(),
   ],
   isInServerlessEnv: true,

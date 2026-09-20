@@ -12,6 +12,10 @@ export async function POST(request) {
       return jsonResponse({ error: 'Username ini bukan administrator utama.' }, 403);
     }
 
+    if (result.status === 'ADMINISTRATOR_ALREADY_EXISTS') {
+      return jsonResponse({ error: 'Administrator sudah ada. Role hanya bisa diubah oleh Administrator.' }, 403);
+    }
+
     if (result.status !== 'OK') {
       return jsonResponse({ error: `Gagal membuat administrator: ${result.status}` }, 500);
     }

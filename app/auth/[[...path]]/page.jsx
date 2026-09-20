@@ -22,15 +22,6 @@ function getFieldError(response, fallback) {
   return fallback;
 }
 
-async function bootstrapAdministratorIfAllowed() {
-  const response = await fetch('/api/admin/bootstrap', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-  return response.ok;
-}
-
 export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,7 +37,8 @@ export default function AuthPage() {
     setMessage('');
     setIsLoading(true);
 
-    const normalizedUsername = normalizeUsername(username);
+    const displayUsername = username.trim();
+    const normalizedUsername = normalizeUsername(displayUsername);
 
     if (!normalizedUsername) {
       setMessage('Username wajib diisi.');
@@ -71,7 +63,11 @@ export default function AuthPage() {
         : await EmailPassword.signUp({ formFields });
 
       if (response.status === 'OK') {
-        await bootstrapAdministratorIfAllowed();
+        await fetch('/api/admin/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ displayName: displayUsername }),
+        });
         router.push(redirectToPath);
         return;
       }

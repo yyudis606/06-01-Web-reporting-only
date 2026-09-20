@@ -1,4 +1,12 @@
-import { getCurrentAdmin, jsonResponse, updateUserPassword, withRequiredSession } from '../../../../../server/adminAuth';
+import {
+  getCurrentAdmin,
+  getUserSummary,
+  jsonResponse,
+  updateUserPassword,
+  withRequiredSession,
+} from '../../../../../server/adminAuth';
+import SuperTokens from 'supertokens-node';
+import { recordAdminActivity } from '../../../../../server/activityLog';
 
 export async function PATCH(request, { params }) {
   return withRequiredSession(request, async (session) => {
@@ -9,7 +17,7 @@ export async function PATCH(request, { params }) {
     }
 
     if (!admin.canManageUsers) {
-      return jsonResponse({ error: 'Akun ini tidak punya izin reset password.' }, 403);
+      return jsonResponse({ error: 'Akun ini tidak punya izin Pengelola User.' }, 403);
     }
 
     const body = await request.json();
@@ -20,11 +28,27 @@ export async function PATCH(request, { params }) {
     }
 
     const { userId } = await params;
+    const targetUser = await SuperTokens.getUser(userId);
+    const targetSummary = targetUser ? await getUserSummary(targetUser) : undefined;
+
+    if (!targetSummary) {
+      return jsonResponse({ error: 'Target user tidak ditemukan.' }, 404);
+    }
+
+    if (!admin.isAdministrator && targetSummary.roles.includes('administrator')) {
+      return jsonResponse({ error: 'Admin tidak bisa reset password akun Administrator.' }, 403);
+    }
+
     const result = await updateUserPassword(userId, newPassword);
 
     if (result.status !== 'OK') {
       return jsonResponse({ error: `Gagal reset password: ${result.status}` }, 400);
     }
+
+    await recordAdminActivity(request, admin, 'Reset password user', targetSummary?.username || userId, {
+      targetUserId: userId,
+      summaries: [`User: ${targetSummary?.displayName || targetSummary?.username || userId}`],
+    });
 
     return jsonResponse({ status: 'OK' });
   });
