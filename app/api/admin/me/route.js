@@ -5,7 +5,10 @@ export async function GET(request) {
     const admin = await getCurrentAdmin(session);
 
     if (admin.status !== 'OK') {
-      return jsonResponse({ error: 'User tidak ditemukan.' }, 404);
+      // Sesi masih tersimpan di browser tapi akunnya sudah dihapus dari sistem
+      // (misalnya lewat fitur hapus akun). Perlakukan seperti sesi tidak valid
+      // supaya client otomatis membersihkan status login, bukan menampilkan error.
+      return jsonResponse({ error: 'SESSION_INVALID' }, 440);
     }
 
     return jsonResponse({

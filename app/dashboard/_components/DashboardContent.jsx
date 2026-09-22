@@ -71,6 +71,13 @@ export default function DashboardContent({ initialData = null }) {
         }
 
         if (response.status === 401 || response.status === 440) {
+          // Sesi di browser sudah tidak valid lagi (misalnya akun sudah dihapus).
+          // Bersihkan sesi supaya tidak terus dikirim ulang ke server.
+          try {
+            await signOut();
+          } catch {
+            // Abaikan; sesi mungkin sudah terhapus di sisi server.
+          }
           setIsLoggedIn(false);
           setAdminLinkLabel('Admin');
           return;
