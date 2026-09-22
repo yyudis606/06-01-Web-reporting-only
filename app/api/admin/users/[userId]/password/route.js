@@ -7,6 +7,7 @@ import {
 } from '../../../../../server/adminAuth';
 import SuperTokens from 'supertokens-node';
 import { recordAdminActivity } from '../../../../../server/activityLog';
+import { getPasswordValidationError } from '../../../../../config/password';
 
 export async function PATCH(request, { params }) {
   return withRequiredSession(request, async (session) => {
@@ -23,8 +24,9 @@ export async function PATCH(request, { params }) {
     const body = await request.json();
     const newPassword = String(body.newPassword || '');
 
-    if (newPassword.length < 8) {
-      return jsonResponse({ error: 'Password baru minimal 8 karakter.' }, 400);
+    const passwordError = getPasswordValidationError(newPassword);
+    if (passwordError) {
+      return jsonResponse({ error: passwordError }, 400);
     }
 
     const { userId } = await params;

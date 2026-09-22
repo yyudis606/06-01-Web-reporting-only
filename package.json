@@ -1,11 +1,13 @@
 {
   "name": "06-01-web-reporting-only",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "predeploy": "npm version patch --no-git-tag-version --allow-same-version",
+    "deploy": "npm run build && vercel deploy --prod --yes"
   },
   "keywords": [],
   "author": "",

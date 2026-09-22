@@ -9,6 +9,7 @@ import Card from './charts/Card';
 import LineChart from './charts/LineChart';
 import BarChart from './charts/BarChart';
 import PieChart from './charts/PieChart';
+import packageInfo from '../../../package.json';
 import {
   dashboardText,
   divisionChartData,
@@ -321,14 +322,19 @@ export default function DashboardContent({ initialData = null }) {
       </section>
 
       <footer className="dashboard-footer">
-        <Image
-          src="/images/brand/Logo devanycode (box).svg"
-          alt=""
-          width={28}
-          height={28}
-          className="dashboard-footer__logo"
-        />
-        <span>Created by devANYcode</span>
+        <span className="dashboard-footer__text">
+          <span className="dashboard-footer__brand">
+            <Image
+              src="/images/brand/Logo devanycode (box).svg"
+              alt=""
+              width={28}
+              height={28}
+              className="dashboard-footer__logo"
+            />
+            <span>&copy; 2026 Created by devANYcode</span>
+          </span>
+          <span className="dashboard-footer__version">v{packageInfo.version}</span>
+        </span>
       </footer>
     </main>
   );

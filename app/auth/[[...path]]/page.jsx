@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import EmailPassword from 'supertokens-auth-react/recipe/emailpassword';
 import { normalizeUsername, usernameToEmail } from '../../config/admin';
+import { PASSWORD_REQUIREMENT_NOTE, getPasswordValidationError } from '../../config/password';
 import './style.scss';
 
 function toUsernameMessage(message) {
@@ -20,6 +21,32 @@ function getFieldError(response, fallback) {
   }
 
   return fallback;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+// SuperTokens Core can restart briefly (e.g. Railway auto-restart), which makes
+// a single request fail with a transient network error. Retry a couple of times
+// with a short backoff before surfacing an error to the user.
+async function withRetry(action, { retries = 2, delayMs = 700 } = {}) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await action();
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) {
+        await wait(delayMs * (attempt + 1));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 export default function AuthPage() {
@@ -46,8 +73,15 @@ export default function AuthPage() {
       return;
     }
 
-    if (password.length < 8) {
-      setMessage('Password minimal 8 karakter.');
+    if (mode === 'signup') {
+      const passwordError = getPasswordValidationError(password);
+      if (passwordError) {
+        setMessage(passwordError);
+        setIsLoading(false);
+        return;
+      }
+    } else if (!password) {
+      setMessage('Password wajib diisi.');
       setIsLoading(false);
       return;
     }
@@ -58,9 +92,11 @@ export default function AuthPage() {
     ];
 
     try {
-      const response = mode === 'signin'
-        ? await EmailPassword.signIn({ formFields })
-        : await EmailPassword.signUp({ formFields });
+      const response = await withRetry(() => (
+        mode === 'signin'
+          ? EmailPassword.signIn({ formFields })
+          : EmailPassword.signUp({ formFields })
+      ));
 
       if (response.status === 'OK') {
         await fetch('/api/admin/profile', {
@@ -123,10 +159,14 @@ export default function AuthPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Minimal 8 karakter"
+              placeholder="Minimal 8 karakter, ada angka"
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             />
           </label>
+
+          {mode === 'signup' ? (
+            <p className="auth-hint">{PASSWORD_REQUIREMENT_NOTE}</p>
+          ) : null}
 
           {message ? <div className="auth-message">{message}</div> : null}
 

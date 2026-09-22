@@ -13,7 +13,10 @@ export async function GET(request) {
       return jsonResponse({ error: 'User tidak ditemukan.' }, 404);
     }
 
-    if (!admin.isAdministrator && !admin.canManageUsers && !admin.canEditData) {
+    // History aktivitas berisi data sensitif (IP address, user-agent, reset password,
+    // hapus akun, dll). Batasi hanya untuk Administrator dan akun yang diberi akses
+    // "pengelola user" — bukan untuk editor konten biasa.
+    if (!admin.isAdministrator && !admin.canManageUsers) {
       return jsonResponse({ error: 'Akun ini belum punya izin melihat history aktivitas.' }, 403);
     }
 

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { doesSessionExist, signOut } from 'supertokens-auth-react/recipe/session';
 import { ADMIN_ROLES, SUPER_ADMIN_USERNAME } from '../../config/admin';
+import { PASSWORD_REQUIREMENT_NOTE, getPasswordValidationError } from '../../config/password';
 
 function formatDate(timestamp) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -161,6 +162,12 @@ export default function AdminContent() {
   const [activeEditor, setActiveEditor] = useState('dailyWorkInput');
   const [message, setMessage] = useState('Memuat data admin...');
   const [passwordInputs, setPasswordInputs] = useState({});
+  const [ownPasswordForm, setOwnPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isChangingOwnPassword, setIsChangingOwnPassword] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
   const roleEntries = useMemo(
@@ -289,7 +296,9 @@ export default function AdminContent() {
       if (storageResponse.ok) {
         setStorageUsage(storageData.usage);
       }
+    }
 
+    if (meData.isAdministrator || meData.canManageUsers) {
       const {
         response: logsResponse,
         data: logsData,
@@ -324,6 +333,51 @@ export default function AdminContent() {
   const handleLogout = async () => {
     await signOut();
     router.push('/auth');
+  };
+
+  const changeMyPassword = async () => {
+    const { currentPassword, newPassword, confirmPassword } = ownPasswordForm;
+
+    if (!currentPassword) {
+      showToast('error', 'Password Belum Diganti', 'Password saat ini wajib diisi.');
+      return;
+    }
+
+    const passwordError = getPasswordValidationError(newPassword);
+    if (passwordError) {
+      showToast('error', 'Password Belum Diganti', passwordError);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showToast('error', 'Password Belum Diganti', 'Konfirmasi password baru tidak cocok.');
+      return;
+    }
+
+    setIsChangingOwnPassword(true);
+    showToast('loading', 'Mengganti Password', 'Mohon tunggu, password sedang diperbarui...', 0);
+
+    const { response, data, sessionExpired } = await fetchAdminJson('/api/admin/change-password', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+
+    setIsChangingOwnPassword(false);
+
+    if (sessionExpired) {
+      return;
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || 'Gagal mengganti password.';
+      setMessage(errorMessage);
+      showToast('error', 'Password Belum Diganti', errorMessage);
+      return;
+    }
+
+    setOwnPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    showToast('success', 'Password Diganti', 'Password akun Anda berhasil diperbarui.');
   };
 
   const refreshActivityLogs = async ({ silent = false } = {}) => {
@@ -421,9 +475,10 @@ export default function AdminContent() {
   const resetPassword = async (user) => {
     const newPassword = passwordInputs[user.id] || '';
 
-    if (newPassword.length < 8) {
-      setMessage('Password baru minimal 8 karakter.');
-      showToast('error', 'Password Belum Direset', 'Password baru minimal 8 karakter.');
+    const passwordError = getPasswordValidationError(newPassword);
+    if (passwordError) {
+      setMessage(passwordError);
+      showToast('error', 'Password Belum Direset', passwordError);
       return;
     }
 
@@ -594,6 +649,17 @@ export default function AdminContent() {
 
       {message ? <div className="admin-message">{message}</div> : null}
 
+      {adminInfo ? (
+        <ChangeMyPasswordPanel
+          form={ownPasswordForm}
+          isSubmitting={isChangingOwnPassword}
+          onChange={(field, value) =>
+            setOwnPasswordForm((current) => ({ ...current, [field]: value }))
+          }
+          onSubmit={changeMyPassword}
+        />
+      ) : null}
+
       {storageUsage ? <StorageUsagePanel usage={storageUsage} /> : null}
 
       {content && adminInfo?.canEditData ? (
@@ -607,7 +673,7 @@ export default function AdminContent() {
         />
       ) : null}
 
-      {adminInfo?.isAdministrator || adminInfo?.canManageUsers || adminInfo?.canEditData ? (
+      {adminInfo?.isAdministrator || adminInfo?.canManageUsers ? (
         <ActivityLogPanel
           canClear={adminInfo.isAdministrator}
           logs={activityLogs}
@@ -655,7 +721,7 @@ export default function AdminContent() {
                 <div className="admin-password-reset">
                   <input
                     type="password"
-                    placeholder="Password baru"
+                    placeholder="Password baru (min 8 karakter, ada angka)"
                     value={passwordInputs[user.id] || ''}
                     onChange={(event) =>
                       setPasswordInputs((current) => ({
@@ -668,6 +734,7 @@ export default function AdminContent() {
                     Reset Password
                   </button>
                 </div>
+                <p className="admin-password-hint">{PASSWORD_REQUIREMENT_NOTE}</p>
 
                 {(() => {
                   const deleteBlockReason = getDeleteUserBlockReason(user);
@@ -694,6 +761,67 @@ export default function AdminContent() {
         </section>
       ) : null}
     </main>
+  );
+}
+
+function ChangeMyPasswordPanel({ form, isSubmitting, onChange, onSubmit }) {
+  return (
+    <section className="admin-panel admin-change-password">
+      <div className="admin-panel__header">
+        <div>
+          <p className="admin-eyebrow">Akun Saya</p>
+          <h2>Ganti Password</h2>
+          <p>
+            Gunakan ini untuk mengganti password akun Anda sendiri, misalnya setelah
+            password sempat di-reset oleh pengelola user.
+          </p>
+        </div>
+      </div>
+
+      <form
+        className="admin-change-password__form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
+        <label>
+          Password Saat Ini
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={form.currentPassword}
+            onChange={(event) => onChange('currentPassword', event.target.value)}
+          />
+        </label>
+
+        <label>
+          Password Baru
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={form.newPassword}
+            onChange={(event) => onChange('newPassword', event.target.value)}
+          />
+        </label>
+
+        <label>
+          Konfirmasi Password Baru
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={form.confirmPassword}
+            onChange={(event) => onChange('confirmPassword', event.target.value)}
+          />
+        </label>
+
+        <p className="admin-password-hint">{PASSWORD_REQUIREMENT_NOTE}</p>
+
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Menyimpan...' : 'Ganti Password'}
+        </button>
+      </form>
+    </section>
   );
 }
 

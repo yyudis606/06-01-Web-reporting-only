@@ -133,8 +133,21 @@ export async function getCurrentAdmin(session) {
   };
 }
 
-export async function bootstrapSuperAdminIfNeeded(session) {
+// Bootstrap hanya boleh dijalankan jika pemilik deployment memasang BOOTSTRAP_SECRET
+// di environment variable (Vercel) dan mengirimkan nilai yang sama persis saat memanggil
+// endpoint ini. Ini mencegah orang lain mendaftar dengan username "yyudis606" lalu
+// mengklaim role administrator sebelum pemilik asli sempat melakukannya (race condition).
+export async function bootstrapSuperAdminIfNeeded(session, providedSecret) {
   await ensureAdminRoles();
+
+  const bootstrapSecret = process.env.BOOTSTRAP_SECRET;
+  if (!bootstrapSecret) {
+    return { status: 'BOOTSTRAP_DISABLED' };
+  }
+
+  if (!providedSecret || providedSecret !== bootstrapSecret) {
+    return { status: 'INVALID_BOOTSTRAP_SECRET' };
+  }
 
   const existingAdministrators = await UserRolesNode.getUsersThatHaveRole(TENANT_ID, 'administrator');
   if (existingAdministrators.status !== 'OK') {
@@ -228,4 +241,31 @@ export async function updateUserPassword(targetUserId, newPassword) {
     applyPasswordPolicy: true,
     tenantIdForPasswordPolicy: TENANT_ID,
   });
+}
+
+// Ganti password akun sendiri (self-service), setelah verifikasi password lama.
+// Dipakai setiap akun (Administrator, Admin, editor) untuk mengganti password milik
+// mereka sendiri, misalnya setelah password sempat di-reset oleh pengelola user.
+export async function changeOwnPassword(session, currentPassword, newPassword) {
+  const user = await getSessionUser(session);
+  if (!user) {
+    return { status: 'UNKNOWN_USER' };
+  }
+
+  const email = user.emails[0] || '';
+  if (!email) {
+    return { status: 'NO_EMAIL_PASSWORD_LOGIN_METHOD' };
+  }
+
+  const verifyResponse = await EmailPasswordNode.verifyCredentials(TENANT_ID, email, currentPassword);
+  if (verifyResponse.status !== 'OK') {
+    return { status: 'WRONG_CURRENT_PASSWORD' };
+  }
+
+  const result = await updateUserPassword(user.id, newPassword);
+  if (result.status !== 'OK') {
+    return result;
+  }
+
+  return { status: 'OK', user: await getUserSummary(user) };
 }
