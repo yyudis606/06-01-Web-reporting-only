@@ -189,6 +189,9 @@ npm run build
 # Jalankan hasil build secara lokal (setelah npm run build)
 npm run start
 
+# Cek kualitas kode dengan ESLint (aturan Next.js)
+npm run lint
+
 # Deploy ke Vercel production SEKALIGUS auto-bump versi patch
 # (mis. v1.0.3 -> v1.0.4), lalu tampil di footer dashboard
 npm run deploy
