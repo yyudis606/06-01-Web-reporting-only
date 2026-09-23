@@ -29,9 +29,10 @@ function wait(ms) {
   });
 }
 
-// SuperTokens Core can restart briefly (e.g. Railway auto-restart), which makes
-// a single request fail with a transient network error. Retry a couple of times
-// with a short backoff before surfacing an error to the user.
+// Kadang ada gangguan jaringan sesaat antara server kita dan SuperTokens Core
+// (misalnya saat maintenance singkat di sisi provider), yang membuat satu
+// request gagal dengan error jaringan sementara. Coba ulang beberapa kali
+// dengan jeda singkat sebelum menampilkan error ke pengguna.
 async function withRetry(action, { retries = 2, delayMs = 700 } = {}) {
   let lastError;
 
