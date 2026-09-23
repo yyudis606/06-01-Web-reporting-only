@@ -172,10 +172,29 @@ svg {
 
 .pie-chart__legend li {
   display: grid;
-  grid-template-columns: 12px 1fr auto;
-  gap: 10px;
+  grid-template-columns: 28px 12px 1fr auto;
+  gap: 8px;
   align-items: center;
   color: #dfe8fb;
+}
+
+.legend-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 1.44rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.legend-rank--max {
+  color: #4ade80;
+}
+
+.legend-rank--min {
+  color: #f87171;
 }
 
 .legend-dot {

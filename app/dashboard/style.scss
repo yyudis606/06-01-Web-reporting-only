@@ -313,6 +313,41 @@
   color: #fecaca;
 }
 
+.site-status__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+
+  span {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  button {
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 10px;
+    padding: 7px 14px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #bfdbfe;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: rgba(59, 130, 246, 0.22);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}
+
 @media (max-width: 900px) {
   .dashboard-header {
     align-items: flex-start;

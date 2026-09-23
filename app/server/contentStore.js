@@ -3,6 +3,26 @@ import { deriveDashboardData } from '../../data/dashboardModel';
 import { getDatabasePool } from './database';
 
 const CONTENT_KEY = 'dashboard';
+
+// Cache in-memory sederhana supaya banyak request yang datang berdekatan
+// (mis. beberapa user membuka dashboard dalam beberapa detik yang sama)
+// tidak masing-masing memicu query database + hitung ulang statistik dari nol.
+// Cache ini hanya hidup selama instance server (Vercel function) masih "warm",
+// dan langsung dihapus setiap kali admin menyimpan perubahan data (lihat
+// invalidateContentCache()), jadi perubahan tetap terlihat instan.
+const CONTENT_CACHE_TTL_MS = 30 * 1000;
+let cachedContent = null;
+let cachedContentAt = 0;
+let cachedDerivedSource = null;
+let cachedDerived = null;
+
+function invalidateContentCache() {
+  cachedContent = null;
+  cachedContentAt = 0;
+  cachedDerivedSource = null;
+  cachedDerived = null;
+}
+
 function hydrateContent(content = {}) {
   return {
     ...defaultDashboardContent,
@@ -39,6 +59,10 @@ async function ensureContentTable(client) {
 }
 
 export async function getDashboardContent() {
+  if (cachedContent && Date.now() - cachedContentAt < CONTENT_CACHE_TTL_MS) {
+    return cachedContent;
+  }
+
   const db = getDatabasePool();
 
   if (!db) {
@@ -59,10 +83,14 @@ export async function getDashboardContent() {
         [CONTENT_KEY, JSON.stringify(defaultDashboardContent)],
       );
 
-      return hydrateContent();
+      cachedContent = hydrateContent();
+      cachedContentAt = Date.now();
+      return cachedContent;
     }
 
-    return hydrateContent(result.rows[0].data);
+    cachedContent = hydrateContent(result.rows[0].data);
+    cachedContentAt = Date.now();
+    return cachedContent;
   } catch (error) {
     console.error('Failed to read dashboard content:', error);
     return hydrateContent();
@@ -93,10 +121,24 @@ export async function saveDashboardContent(content) {
     client.release();
   }
 
+  // Perubahan admin harus langsung terlihat, jadi cache dibuang seketika
+  // (bukan menunggu TTL) agar request berikutnya membaca data terbaru.
+  invalidateContentCache();
+
   return hydrateContent(content);
 }
 
 export async function getDerivedDashboardData() {
   const content = await getDashboardContent();
-  return deriveDashboardData(content);
+
+  // Selama isi konten belum berubah (masih objek cache yang sama persis),
+  // hasil perhitungan statistik sebelumnya dipakai ulang tanpa proses lagi.
+  if (cachedDerivedSource === content) {
+    return cachedDerived;
+  }
+
+  const derived = deriveDashboardData(content);
+  cachedDerivedSource = content;
+  cachedDerived = derived;
+  return derived;
 }

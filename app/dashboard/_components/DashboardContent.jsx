@@ -32,6 +32,8 @@ const fallbackDashboardData = {
   weeklyResults,
 };
 
+const SITE_STATUS_PAGE_SIZE = 50;
+
 export default function DashboardContent({ initialData = null }) {
   const router = useRouter();
   const [exportError, setExportError] = useState('');
@@ -39,6 +41,7 @@ export default function DashboardContent({ initialData = null }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [adminLinkLabel, setAdminLinkLabel] = useState('Admin');
   const [dashboardData, setDashboardData] = useState(initialData);
+  const [siteStatusPage, setSiteStatusPage] = useState(1);
 
   useEffect(() => {
     let isMounted = true;
@@ -114,6 +117,7 @@ export default function DashboardContent({ initialData = null }) {
           updateSchedules: data.updateSchedules,
           weeklyResults: data.weeklyResults,
         });
+        setSiteStatusPage(1);
       })
       .catch((error) => {
         console.error('Failed to load editable dashboard content:', error);
@@ -176,6 +180,19 @@ export default function DashboardContent({ initialData = null }) {
       </main>
     );
   }
+
+  const totalSiteStatuses = dashboardData.siteStatuses.length;
+  const siteStatusTotalPages = Math.max(1, Math.ceil(totalSiteStatuses / SITE_STATUS_PAGE_SIZE));
+  const currentSiteStatusPage = Math.min(siteStatusPage, siteStatusTotalPages);
+  const siteStatusStartIndex = (currentSiteStatusPage - 1) * SITE_STATUS_PAGE_SIZE;
+  const visibleSiteStatuses = dashboardData.siteStatuses.slice(
+    siteStatusStartIndex,
+    siteStatusStartIndex + SITE_STATUS_PAGE_SIZE,
+  );
+
+  const goToSiteStatusPage = (page) => {
+    setSiteStatusPage(Math.min(Math.max(page, 1), siteStatusTotalPages));
+  };
 
   return (
     <main className="dashboard-page">
@@ -307,13 +324,13 @@ export default function DashboardContent({ initialData = null }) {
               <p className="eyebrow">Detail Site</p>
               <h2>Status Site &amp; Team Lokasi</h2>
             </div>
-            <span>{dashboardData.siteStatuses.length} site</span>
+            <span>{totalSiteStatuses} site</span>
           </div>
 
           <div className="site-status__list">
-            {dashboardData.siteStatuses.map((site, index) => (
-              <div key={`${site.name}-${index}`} className="site-status__item">
-                <span className="site-status__number">{index + 1}</span>
+            {visibleSiteStatuses.map((site, index) => (
+              <div key={`${site.name}-${siteStatusStartIndex + index}`} className="site-status__item">
+                <span className="site-status__number">{siteStatusStartIndex + index + 1}</span>
                 <div className="site-status__content">
                   <strong>{site.name}</strong>
                   <span>{site.team}</span>
@@ -325,6 +342,28 @@ export default function DashboardContent({ initialData = null }) {
               </div>
             ))}
           </div>
+
+          {siteStatusTotalPages > 1 ? (
+            <div className="site-status__pagination">
+              <button
+                type="button"
+                onClick={() => goToSiteStatusPage(currentSiteStatusPage - 1)}
+                disabled={currentSiteStatusPage <= 1}
+              >
+                Sebelumnya
+              </button>
+              <span>
+                Halaman {currentSiteStatusPage} dari {siteStatusTotalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => goToSiteStatusPage(currentSiteStatusPage + 1)}
+                disabled={currentSiteStatusPage >= siteStatusTotalPages}
+              >
+                Berikutnya
+              </button>
+            </div>
+          ) : null}
         </article>
       </section>
 

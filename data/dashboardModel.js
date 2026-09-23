@@ -65,6 +65,13 @@ export function deriveDashboardData(rawContent) {
   const teamWorkSummary = teamWorkInput.map((team) => {
     const total = sumDailyResults(team.dailyResults);
 
+    // Karena install bersifat kumulatif (hanya bertambah), total akhir team
+    // dicapai tepat di hari terakhir mereka menambah install. Hari ini dipakai
+    // untuk menentukan siapa yang PERTAMA mencapai jumlah site terbanyak,
+    // bukan sekadar urutan team di data.
+    const installDays = team.dailyResults.filter((item) => item.install > 0).map((item) => item.day);
+    const reachedTotalOnDay = total.install > 0 ? Math.max(...installDays) : Infinity;
+
     return {
       team: team.team,
       done: total.install,
@@ -72,6 +79,7 @@ export function deriveDashboardData(rawContent) {
       cancel: total.cancel,
       color: team.color,
       dailyResults: team.dailyResults,
+      reachedTotalOnDay,
       note: `Install ${total.install} site, hold ${total.hold} site, cancel ${total.cancel} site`,
     };
   });
@@ -202,10 +210,11 @@ export function deriveDashboardData(rawContent) {
     status: `Done ${item.done} site`,
   }));
 
-  const divisionChartData = divisionResults.map((item) => ({
+  const divisionChartData = divisionResults.map((item, index) => ({
     label: item.division,
     value: item.progress,
     color: item.color,
+    reachedMaxOnDay: teamWorkSummary[index].reachedTotalOnDay,
   }));
 
   return {
