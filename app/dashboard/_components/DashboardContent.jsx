@@ -369,7 +369,12 @@ export default function DashboardContent({ initialData = null }) {
 
       <footer className="dashboard-footer">
         <span className="dashboard-footer__text">
-          <span className="dashboard-footer__brand">
+          <a
+            href="https://devanycode.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="dashboard-footer__brand"
+          >
             <Image
               src="/images/brand/Logo devanycode (box).svg"
               alt=""
@@ -377,8 +382,15 @@ export default function DashboardContent({ initialData = null }) {
               height={28}
               className="dashboard-footer__logo"
             />
-            <span>&copy; 2026 Created by devANYcode</span>
-          </span>
+            <span>
+              &copy; 2026 Created by{" "}
+              <span className="dashboard-footer__brandname">
+                <span className="dashboard-footer__brandname-dev">dev</span>
+                <span className="dashboard-footer__brandname-any">ANY</span>
+                <span className="dashboard-footer__brandname-code">code</span>
+              </span>
+            </span>
+          </a>
           <span className="dashboard-footer__version">v{packageInfo.version}</span>
         </span>
       </footer>
